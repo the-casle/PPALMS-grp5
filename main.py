@@ -1,44 +1,46 @@
+import os
 import wx
 
+class MyPanel(wx.Panel):
+
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+
+        self.my_text = wx.TextCtrl(self, style=wx.TE_MULTILINE)
+        btn = wx.Button(self, label='Open Text File')
+        btn.Bind(wx.EVT_BUTTON, self.onOpen)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.my_text, 1, wx.ALL|wx.EXPAND)
+        sizer.Add(btn, 0, wx.ALL|wx.CENTER, 5)
+
+        self.SetSizer(sizer)
+
+    def onOpen(self, event):
+        dialog = wx.FileDialog(self, "Open Source File",
+                               style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+
+        if dialog.ShowModal() == wx.ID_CANCEL:
+            return
+
+        path = dialog.GetPath()
+
+        if os.path.exists(path):
+            with open(path) as fobj:
+                for line in fobj:
+                    self.my_text.WriteText(line)
+
+
 class MyFrame(wx.Frame):
+
     def __init__(self):
-        super().__init__(parent=None, title='Hello World')
-        panel = wx.Panel(self)
-        my_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.text_ctrl = wx.TextCtrl(panel)
-        my_sizer.Add(self.text_ctrl, 0, wx.ALL | wx.EXPAND, 5)
-        my_btn = wx.Button(panel, label='Browse Files')
-        my_btn.Bind(
-            event=wx.EVT_BUTTON,
-            handler=self.on_open_folder,
-        )
-        my_sizer.Add(my_btn, 0, wx.ALL | wx.CENTER, 5)
-        panel.SetSizer(my_sizer)
+        wx.Frame.__init__(self, None, title='Text File Reader')
+
+        panel = MyPanel(self)
+
         self.Show()
 
-    def on_press(self, event):
-        value = self.text_ctrl.GetValue()
-        if not value:
-            print("You didn't enter anything!")
-        else:
-            print(f'You typed: "{value}"')
-
-    def on_open_folder(self, event):
-        with wx.FileDialog(self, "Open Source file",
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
-
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-
-            # Proceed loading the file chosen by the user
-            pathname = fileDialog.GetPath()
-            try:
-                with open(pathname, 'r') as file:
-                    self.doLoadDataOrWhatever(file)
-            except IOError:
-                wx.LogError("Cannot open file '%s'." % newfile)
-
 if __name__ == '__main__':
-    app = wx.App()
+    app = wx.App(False)
     frame = MyFrame()
     app.MainLoop()
