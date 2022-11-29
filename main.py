@@ -11,10 +11,11 @@ class Mp3Panel(wx.Panel):
             self,
             style=wx.LC_REPORT | wx.BORDER_SUNKEN
         )
-        self.list_ctrl.InsertColumn(0, 'Artist', width=10)
-        self.list_ctrl.InsertColumn(1, 'Lines', width=140)
+        self.list_ctrl.InsertColumn(0, ' ', format = wx.LIST_FORMAT_RIGHT, width = wx.LIST_AUTOSIZE)
+        self.list_ctrl.InsertColumn(1, 'Lines', format = wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE)
         main_sizer.Add(self.list_ctrl, 1, wx.ALL | wx.EXPAND, 5)
         edit_button = wx.Button(self, label='Edit')
+        self.list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.item_selected)
         edit_button.Bind(wx.EVT_BUTTON, self.on_edit)
         main_sizer.Add(edit_button, 0, wx.ALL | wx.CENTER, 5)
         self.SetSizer(main_sizer)
@@ -32,12 +33,27 @@ class Mp3Panel(wx.Panel):
             with open(path) as fobj:
                 i = 0
                 for line in fobj:
-                    self.list_ctrl.InsertItem(i, line)
+                    self.list_ctrl.InsertItem(i, "%i " % i)
+                    self.list_ctrl.SetItem(i, 1, line)
                     i += 1
 
+        self.list_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.list_ctrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
 
-    def update_mp3_listing(self, folder_path):
-        print(folder_path)
+    def item_selected(self, event):
+        item = event.GetItem()
+        item_ind = event.GetIndex()
+        item.SetText("Green")
+        self.list_ctrl.GetItem(item_ind, 1).SetBackgroundColour(wx.Colour(green = 255, red = 0, blue = 0, alpha= 255))
+        print(self.list_ctrl.GetItem(item_ind, 1).GetBackgroundColour())
+        print(self.list_ctrl.GetSelectedItemCount())
+            #.SetBackgroundColour("green")
+        #SetBackgroundColour(wx.Colour(green = 255, red = 0, blue = 0, alpha= 255))
+
+        print("Index: %i" % item_ind)
+        if self.list_ctrl.IsSelected(item_ind):
+            self.list_ctrl.SetItemState(item_ind, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+            print("Selected")
 
 class MyPanel(wx.Panel):
 
