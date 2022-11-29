@@ -37,7 +37,7 @@ class AnnotateView(wx.Panel):
 
 
 class AnnotateViewControllerAbstract(object):
-    def set_view(self, view: AnnotateView):
+    def set_view(self, view: wx.Panel):
         self._view = view
     def get_view(self):
         return self._view
@@ -49,7 +49,7 @@ class RequestViewController(AnnotateViewControllerAbstract):
     def __init__(self, view_parent):
         super().__init__()
         self.view = RequestView(view_parent)
-        self.view.edit_button.Bind(wx.EVT_BUTTON, self.on_edit)
+        #self.view.edit_button.Bind(wx.EVT_BUTTON, self.on_edit)
 
     def on_edit(self, event):
         dialog = wx.FileDialog(self.view, "Open Source File",
@@ -88,6 +88,12 @@ class AnnotateViewController(AnnotateViewControllerAbstract):
 
         self.load_content(path)
 
+    def set_view(self, view: AnnotateView):
+        self._view = view
+    def get_view(self):
+        return self._view
+
+    view = property(get_view, set_view)
     def setAnnotation(self, annotation: Annotation):
         self.annotation = annotation
 
