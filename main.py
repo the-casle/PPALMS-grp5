@@ -85,11 +85,13 @@ class AnnotatePanel(wx.Panel):
                 self.number_of_lines = i
                 self.annotation.included_lines = [True] * i
 
+
         self.list_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.list_ctrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
 
     def item_selected(self, event):
         item_ind = event.GetIndex()
+        self.list_ctrl.Select(item_ind, False) # Hide the blue highlight for selection
         if self.include_mode:
             if self.annotation.included_lines[item_ind]:
                 self.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 0))
