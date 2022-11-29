@@ -1,7 +1,7 @@
 import os
 import wx
 
-#test comment
+#test comment2
 
 class Annotation(object):
     def __init__(self, parent):
