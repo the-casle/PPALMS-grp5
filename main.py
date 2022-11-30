@@ -8,7 +8,7 @@ class Annotation(object):
 
         # Properties of the object
         self.included_lines = []
-        self.tuple_groups = []
+        self.line_tuple_groups = []
         self.tuple_flags = []
         self.number_of_lines = 0
         self.source_code_path = ""
@@ -240,7 +240,6 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
 
         self.current_color = wx.Colour("blue")
 
-        self.groups = [[]]
         self.group_color = []
         self.number_of_groups = 0
         self.selected_group = None
@@ -263,6 +262,8 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
 
     def update_with_annotation(self, annotation: Annotation):
         self.annotation = annotation
+        self.annotation.line_tuple_groups = [None] * self.annotation.number_of_lines
+        print(self.annotation.number_of_lines)
         self.load_content(self.annotation.source_code_path)
 
     def load_content(self, path):
@@ -300,7 +301,6 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
 
     # Handling add group button press
     def on_add_group(self, event):
-        self.groups.append([])
         self.number_of_groups += 1
         self.view.group_list_ctrl.InsertItem(self.number_of_groups - 1, "Group %i" % self.number_of_groups)
         self.new_color()
@@ -313,12 +313,15 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
     def item_selected(self, event):
         item_ind = event.GetIndex()
         line_num = self.line_at_index[item_ind]
+        print(line_num)
         self.view.list_ctrl.Select(item_ind, False)  # Hide the blue highlight for selection
         if self.number_of_groups > 0:
             self.view.list_ctrl.SetItemTextColour(item_ind, self.group_color[self.selected_group])
+            self.annotation.line_tuple_groups[line_num] = self.selected_group
         else:
             # make this a pop up
             print("Need to add group")
+
     def group_item_selected(self, event):
         item_ind = event.GetIndex()
         self.selected_group = item_ind
