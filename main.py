@@ -1,6 +1,7 @@
 import os
 import wx
 
+
 class Annotation(object):
     def __init__(self):
         super().__init__()
@@ -12,16 +13,20 @@ class Annotation(object):
         self.number_of_lines = 0
         self.source_code_path = ""
 
+
 # Abstract class so that the page controller knows that each view_controller has a view
 class AnnotateViewControllerAbstract(object):
     def set_view(self, view: wx.Panel):
         self._view = view
+
     def get_view(self):
         return self._view
+
     def set_annotation(self, annotation: Annotation):
         pass
 
     view = property(get_view, set_view)
+
 
 class RequestView(wx.Panel):
     def __init__(self, parent):
@@ -36,6 +41,7 @@ class RequestView(wx.Panel):
         main_sizer.Add(button_sizer, 0, wx.ALL | wx.CENTER)
 
         self.SetSizer(main_sizer)
+
 
 class RequestViewController(AnnotateViewControllerAbstract):
     def __init__(self, view_parent):
@@ -60,10 +66,12 @@ class RequestViewController(AnnotateViewControllerAbstract):
     # Setting the controller view to be of RequestView and not just wx.Panel
     def set_view(self, view: RequestView):
         self._view = view
+
     def get_view(self):
         return self._view
 
     view = property(get_view, set_view)
+
 
 class AnnotateView(wx.Panel):
     def __init__(self, parent):
@@ -105,14 +113,15 @@ class AnnotateViewController(AnnotateViewControllerAbstract):
     # Setting the self.view to be of AnnotateView type instead of just wx.panel
     def set_view(self, view: AnnotateView):
         self._view = view
+
     def get_view(self):
         return self._view
 
     view = property(get_view, set_view)
+
     def set_annotation(self, annotation: Annotation):
         self.annotation = annotation
         self.load_content(self.annotation.source_code_path)
-        print("Loading content")
 
     def update_color(self):
         for index in range(self.annotation.number_of_lines):
@@ -167,6 +176,7 @@ class AnnotateViewController(AnnotateViewControllerAbstract):
                 self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 0))
                 self.annotation.included_lines[item_ind] = True
 
+
 # The controlling class for the pages
 class AnnotationPagesViewController(object):
     def __init__(self, view_parent):
@@ -185,7 +195,7 @@ class AnnotationPagesViewController(object):
         self.view.prevBtn.Bind(wx.EVT_BUTTON, self.onPrev)
         self.view.nextBtn.Bind(wx.EVT_BUTTON, self.onNext)
 
-    def addPage(self, title_controller: AnnotateViewControllerAbstract, title=None,):
+    def addPage(self, title_controller: AnnotateViewControllerAbstract, title=None, ):
 
         # Adding the page controller view to the panel view
         self.view.panelSizer.Add(title_controller.view, 2, wx.EXPAND)
@@ -196,6 +206,7 @@ class AnnotationPagesViewController(object):
             # hide all panels after the first one
             title_controller.view.Hide()
             self.view.Layout()
+
     def onNext(self, event):
         pageCount = len(self.pages)
         if pageCount - 1 != self.page_num:
@@ -232,12 +243,13 @@ class AnnotationPagesViewController(object):
         else:
             print("You're already on the first page!")
 
+
 # The view that holds the pages, includes navigation between pages
 class AnnotationPagesView(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent=parent)
 
-        #Creating the sizers
+        # Creating the sizers
         self.mainSizer = wx.BoxSizer(wx.VERTICAL)
         self.panelSizer = wx.BoxSizer(wx.VERTICAL)
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -255,6 +267,7 @@ class AnnotationPagesView(wx.Panel):
         self.mainSizer.Add(btn_sizer, 0, wx.ALIGN_RIGHT)
         self.SetSizer(self.mainSizer)
 
+
 # The view controller for the main application.
 class ApplicationViewController(object):
     def __init__(self):
@@ -269,11 +282,11 @@ class ApplicationViewController(object):
 
         # Creating an annotation view controller (this will be changed to included/exclude class that
         # inherits from AnnotateViewController
-        annotate_view_controller2 = AnnotateViewController(view_parent=self.panel_controller.view)
+        annotate_view_controller = AnnotateViewController(view_parent=self.panel_controller.view)
 
         # Adding the view controllers to the panel controller
         self.panel_controller.addPage(request_view_controller, title="Selecting New Annotation")
-        self.panel_controller.addPage(annotate_view_controller2, title="Creating New Annotation")
+        self.panel_controller.addPage(annotate_view_controller, title="Creating New Annotation")
         self.view.Layout()
 
         self.view.Show()
@@ -283,7 +296,8 @@ class ApplicationViewController(object):
 class AppFrame(wx.Frame):
 
     def __init__(self):
-        wx.Frame.__init__(self, None, title='Annotation', size=(800,600))
+        wx.Frame.__init__(self, None, title='Annotation', size=(800, 600))
+
 
 # Initial start up of the application view controller
 if __name__ == '__main__':
