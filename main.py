@@ -274,7 +274,7 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
                 self.annotation.included_lines[line_num] = False
 
             else:
-                self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 150, 0))
+                self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 255))
                 self.annotation.included_lines[line_num] = True
         else:
             if self.annotation.included_lines[line_num]:
