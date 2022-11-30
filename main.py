@@ -13,6 +13,7 @@ class Annotation(object):
         self.number_of_lines = 0
         self.number_of_groups = 0
         self.source_code_path = ""
+        self.file_name = "NO FILE SELECTED"
 
 
 # Abstract class so that the page controller knows that each view_controller has a view
@@ -34,12 +35,19 @@ class RequestView(wx.Panel):
         super().__init__(parent)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        text_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.annotation = Annotation()
 
         # Adding buttons the request view
         self.edit_button = wx.Button(self, label='Select Source File')
         button_sizer.Add(self.edit_button, 0, wx.ALL | wx.LEFT, 20)
 
-        main_sizer.Add(button_sizer, 0, wx.ALL | wx.CENTER)
+        self.file_selection = wx.StaticText(self, label=self.annotation.file_name)
+        text_sizer.Add(self.file_selection, 0, wx.ALL | wx.RIGHT, 20)
+
+        main_sizer.Add(button_sizer, 0, wx.ALL | wx.LEFT)
+        main_sizer.Add(text_sizer, 0, wx.ALL | wx.RIGHT)
 
         self.SetSizer(main_sizer)
 
@@ -63,6 +71,7 @@ class RequestViewController(AnnotateViewControllerAbstract):
 
         # Set the annotation path to the use selected path
         self.annotation.source_code_path = dialog.GetPath()
+        self.view.file_selection = dialog.GetFilename()
 
     # Setting the controller view to be of RequestView and not just wx.Panel
     def set_view(self, view: RequestView):
