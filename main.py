@@ -203,8 +203,8 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
 class SelectTupleView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        group_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # The table list
         self.list_ctrl = wx.ListCtrl(
@@ -213,13 +213,19 @@ class SelectTupleView(wx.Panel):
         )
         self.list_ctrl.InsertColumn(0, ' ', format=wx.LIST_FORMAT_RIGHT, width=wx.LIST_AUTOSIZE)
         self.list_ctrl.InsertColumn(1, 'Lines', format=wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE)
-        main_sizer.Add(self.list_ctrl, 1, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(self.list_ctrl, 1, wx.LEFT | wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
 
-        # Formatting buttons
-        self.include_mode_button = wx.Button(self, label='Switch to Inclusion')
-        button_sizer.Add(self.include_mode_button, 0, wx.ALL | wx.RIGHT, 20)
+        self.group_list_ctrl = wx.ListCtrl(
+            self,
+            style= wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_SINGLE_SEL
+        )
+        self.group_list_ctrl.InsertColumn(0, 'Groups', format=wx.LIST_FORMAT_CENTER, width=wx.LIST_AUTOSIZE)
+        group_sizer.Add(self.group_list_ctrl, 0, wx.ALL | wx.EXPAND, 5)
 
-        main_sizer.Add(button_sizer, 0, wx.ALL | wx.CENTER)
+        self.add_group_button = wx.Button(self, label='Add Group')
+        group_sizer.Add(self.add_group_button, 0, wx.ALL , 5)
+
+        main_sizer.Add(group_sizer, 0, wx.ALL | wx.EXPAND, 20)
 
         self.SetSizer(main_sizer)
 
@@ -234,8 +240,15 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
 
         self.current_color = wx.Colour("blue")
 
+        self.groups = [[]]
+        self.group_color = []
+        self.number_of_groups = 0
+        self.selected_group = None
+
         # Binding the buttons of the view with the handlers in controller
         self.view.list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.item_selected)
+        self.view.group_list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.group_item_selected)
+        self.view.add_group_button.Bind(wx.EVT_BUTTON, self.on_add_group)
 
         self.view.Show()
 
@@ -276,14 +289,7 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
         self.view.list_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.view.list_ctrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
 
-    # Handling include_mode button press
-
-    def item_selected(self, event):
-        item_ind = event.GetIndex()
-        line_num = self.line_at_index[item_ind]
-        self.view.list_ctrl.Select(item_ind, False)  # Hide the blue highlight for selection
-        self.view.list_ctrl.SetItemTextColour(item_ind, self.current_color)
-
+    def new_color(self):
         r = self.current_color.GetRed()
         b = self.current_color.GetBlue()
         g = self.current_color.GetGreen()
@@ -291,6 +297,31 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
         g = (g + 113) % 255
         b = (b + 53) % 255
         self.current_color = wx.Colour(r, g, b)
+
+    # Handling add group button press
+    def on_add_group(self, event):
+        self.groups.append([])
+        self.number_of_groups += 1
+        self.view.group_list_ctrl.InsertItem(self.number_of_groups - 1, "Group %i" % self.number_of_groups)
+        self.new_color()
+        self.group_color.append(self.current_color)
+        self.view.group_list_ctrl.SetItemTextColour(self.number_of_groups - 1, self.current_color)
+
+        if self.selected_group is None:
+            self.selected_group = 0
+
+    def item_selected(self, event):
+        item_ind = event.GetIndex()
+        line_num = self.line_at_index[item_ind]
+        self.view.list_ctrl.Select(item_ind, False)  # Hide the blue highlight for selection
+        if self.number_of_groups > 0:
+            self.view.list_ctrl.SetItemTextColour(item_ind, self.group_color[self.selected_group])
+        else:
+            # make this a pop up
+            print("Need to add group")
+    def group_item_selected(self, event):
+        item_ind = event.GetIndex()
+        self.selected_group = item_ind
 
 # The controlling class for the pages
 class AnnotationPagesViewController(object):
