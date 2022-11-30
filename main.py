@@ -228,12 +228,13 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
     def __init__(self, view_parent):
         super().__init__()
         self.annotation = None
-        self.view = SelectLineView(view_parent)
+        self.view = SelectTupleView(view_parent)
 
         self.line_at_index = []
 
+        self.current_color = wx.Colour("blue")
+
         # Binding the buttons of the view with the handlers in controller
-        self.view.include_mode_button.Bind(wx.EVT_BUTTON, self.on_include_mode)
         self.view.list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.item_selected)
 
         self.view.Show()
@@ -276,34 +277,20 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
         self.view.list_ctrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
 
     # Handling include_mode button press
-    def on_include_mode(self, event):
-        # Swap the include mode to not include mode (exclude_mode)
-        self.include_mode = ~self.include_mode
-        if self.include_mode:
-            self.view.include_mode_button.SetLabel("Switch to Exclusion")
-        else:
-            self.view.include_mode_button.SetLabel("Switch to Inclusion")
 
     def item_selected(self, event):
         item_ind = event.GetIndex()
         line_num = self.line_at_index[item_ind]
         self.view.list_ctrl.Select(item_ind, False)  # Hide the blue highlight for selection
-        if self.include_mode:
-            if self.annotation.included_lines[line_num]:
-                self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 0))
-                self.annotation.included_lines[line_num] = False
+        self.view.list_ctrl.SetItemTextColour(item_ind, self.current_color)
 
-            else:
-                self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 255))
-                self.annotation.included_lines[line_num] = True
-        else:
-            if self.annotation.included_lines[line_num]:
-                self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(255, 0, 0))
-                self.annotation.included_lines[line_num] = False
-            else:
-                self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 0))
-                self.annotation.included_lines[line_num] = True
-
+        r = self.current_color.GetRed()
+        b = self.current_color.GetBlue()
+        g = self.current_color.GetGreen()
+        r = (r + 213) % 255
+        g = (g + 113) % 255
+        b = (b + 53) % 255
+        self.current_color = wx.Colour(r, g, b)
 
 # The controlling class for the pages
 class AnnotationPagesViewController(object):
