@@ -164,13 +164,15 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
             with open(path) as fobj:
                 self.view.list_ctrl.DeleteAllItems()
                 i = 0
-                for line in fobj:
-                    # Adding indexes to first column
-                    self.view.list_ctrl.InsertItem(i, "%i " % i)
+                lines = [s.strip() for s in fobj.readlines()]
+                for line in lines:
+                    if (line != ""):
+                        # Adding indexes to first column
+                        self.view.list_ctrl.InsertItem(i, "%i " % i)
 
-                    # Adding lines to the second column
-                    self.view.list_ctrl.SetItem(i, 1, line)
-                    i += 1
+                        # Adding lines to the second column
+                        self.view.list_ctrl.SetItem(i, 1, line)
+                        i += 1
                 self.annotation.number_of_lines = i
 
                 # Creating an array of boolean values to represent if included or not
