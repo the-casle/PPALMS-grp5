@@ -22,7 +22,7 @@ class AnnotateViewControllerAbstract(object):
     def get_view(self):
         return self._view
 
-    def set_annotation(self, annotation: Annotation):
+    def update_with_annotation(self, annotation: Annotation):
         pass
 
     view = property(get_view, set_view)
@@ -92,6 +92,9 @@ class SelectLineView(wx.Panel):
         self.include_mode_button = wx.Button(self, label='Switch to Inclusion')
         button_sizer.Add(self.include_mode_button, 0, wx.ALL | wx.RIGHT, 20)
 
+        self.clear_button = wx.Button(self, label='Clear Selection')
+        button_sizer.Add(self.clear_button, 0, wx.ALL | wx.LEFT, 20)
+
         main_sizer.Add(button_sizer, 0, wx.ALL | wx.CENTER)
 
         self.SetSizer(main_sizer)
@@ -106,6 +109,7 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
 
         # Binding the buttons of the view with the handlers in controller
         self.view.include_mode_button.Bind(wx.EVT_BUTTON, self.on_include_mode)
+        self.view.clear_button.Bind(wx.EVT_BUTTON, self.clear_color)
         self.view.list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.item_selected)
 
         self.view.Show()
@@ -119,47 +123,12 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
 
     view = property(get_view, set_view)
 
-    def set_annotation(self, annotation: Annotation):
+    def update_with_annotation(self, annotation: Annotation):
         self.annotation = annotation
         self.load_content(self.annotation.source_code_path)
-
-    def update_color(self):
-        for index in range(self.annotation.number_of_lines):
-            self.view.list_ctrl.SetItemTextColour(index, wx.Colour(0, 0, 0))
-            self.annotation.included_lines[index] = ~self.include_mode  # Setting default
-
-    def load_content(self, path):
-        if os.path.exists(path):
-            with open(path) as fobj:
-                i = 0
-                for line in fobj:
-                    # Adding indexes to first column
-                    self.view.list_ctrl.InsertItem(i, "%i " % i)
-
-                    # Adding lines to the second column
-                    self.view.list_ctrl.SetItem(i, 1, line)
-                    i += 1
-                self.annotation.number_of_lines = i
-
-                # Creating an array of boolean values to represent if included or not
-                self.annotation.included_lines = [True] * i
-
-        self.view.list_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        self.view.list_ctrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-
-    # Handling include_mode button press
-    def on_include_mode(self, event):
-        # Swap the include mode to not include mode (exclude_mode)
-        self.include_mode = ~self.include_mode
         self.update_color()
-        if self.include_mode:
-            self.view.include_mode_button.SetLabel("Switch to Exclusion")
-        else:
-            self.view.include_mode_button.SetLabel("Switch to Inclusion")
 
-    def item_selected(self, event):
-        item_ind = event.GetIndex()
-        self.view.list_ctrl.Select(item_ind, False)  # Hide the blue highlight for selection
+    def swap_color(self, item_ind:int):
         if self.include_mode:
             if self.annotation.included_lines[item_ind]:
                 self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 0))
@@ -175,6 +144,60 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
             else:
                 self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 0))
                 self.annotation.included_lines[item_ind] = True
+
+    def update_color(self):
+        for item_ind in range(self.annotation.number_of_lines):
+            if self.include_mode:
+                if self.annotation.included_lines[item_ind]:
+                    self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 150, 0))
+                else:
+                    self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 0))
+            else:
+                if self.annotation.included_lines[item_ind]:
+                    self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(0, 0, 0))
+                else:
+                    self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(255, 0, 0))
+
+    def load_content(self, path):
+        if os.path.exists(path):
+            with open(path) as fobj:
+                self.view.list_ctrl.DeleteAllItems()
+                i = 0
+                for line in fobj:
+                    # Adding indexes to first column
+                    self.view.list_ctrl.InsertItem(i, "%i " % i)
+
+                    # Adding lines to the second column
+                    self.view.list_ctrl.SetItem(i, 1, line)
+                    i += 1
+                self.annotation.number_of_lines = i
+
+                # Creating an array of boolean values to represent if included or not
+                if len(self.annotation.included_lines) != i:
+                    self.annotation.included_lines = [True] * i
+
+        self.view.list_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.view.list_ctrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+
+    # Handling include_mode button press
+    def on_include_mode(self, event):
+        # Swap the include mode to not include mode (exclude_mode)
+        self.include_mode = ~self.include_mode
+        self.update_color()
+        if self.include_mode:
+            self.view.include_mode_button.SetLabel("Switch to Exclusion")
+        else:
+            self.view.include_mode_button.SetLabel("Switch to Inclusion")
+
+    def clear_color(self, event):
+        for index in range(self.annotation.number_of_lines):
+            self.view.list_ctrl.SetItemTextColour(index, wx.Colour(0, 0, 0))
+            self.annotation.included_lines[index] = ~self.include_mode  # Setting default
+
+    def item_selected(self, event):
+        item_ind = event.GetIndex()
+        self.view.list_ctrl.Select(item_ind, False)  # Hide the blue highlight for selection
+        self.swap_color(item_ind)
 
 
 class SelectTupleView(wx.Panel):
@@ -206,7 +229,6 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
         super().__init__()
         self.annotation = None
         self.view = SelectLineView(view_parent)
-        self.include_mode = False
 
         self.line_at_index = []
 
@@ -225,7 +247,7 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
 
     view = property(get_view, set_view)
 
-    def set_annotation(self, annotation: Annotation):
+    def update_with_annotation(self, annotation: Annotation):
         self.annotation = annotation
         self.load_content(self.annotation.source_code_path)
 
@@ -233,10 +255,11 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
 
         if os.path.exists(path):
             with open(path) as fobj:
-
+                self.view.list_ctrl.DeleteAllItems()
                 # This needs more work, or maybe a better idea to make sure it shows only the lines selected
                 i = 0
                 j = 0
+                self.line_at_index = []
                 for line in fobj:
                     if self.annotation.included_lines[i]:
                         # Adding indexes to first column
@@ -248,9 +271,6 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
                         j += 1
                     i += 1
                 self.annotation.number_of_lines = i
-
-                # Creating an array of boolean values to represent if included or not
-                self.annotation.included_lines = [True] * i
 
         self.view.list_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.view.list_ctrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
@@ -324,7 +344,7 @@ class AnnotationPagesViewController(object):
             self.pages[self.page_num].view.Show()
 
             # Setting the annotation of the page controller
-            self.pages[self.page_num].set_annotation(self.annotation)
+            self.pages[self.page_num].update_with_annotation(self.annotation)
 
             self.view.panelSizer.Layout()
         else:
@@ -350,7 +370,7 @@ class AnnotationPagesViewController(object):
             self.view.panelSizer.Layout()
 
             # Updating presented page with annotation
-            self.pages[self.page_num].set_annotation(self.annotation)
+            self.pages[self.page_num].update_with_annotation(self.annotation)
 
             # Make sure to set the other button back to next instead of finish
             self.view.nextBtn.SetLabel("Next")
