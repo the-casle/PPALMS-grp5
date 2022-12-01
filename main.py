@@ -70,7 +70,7 @@ class RequestViewController(AnnotateViewControllerAbstract):
 
         # Set the annotation path to the use selected path
         self.annotation.source_code_path = dialog.GetPath()
-        self.view.file_selection.SetLabel("SELECTED FILE: " + dialog.GetFilename())
+        self.view.file_selection.SetLabel("SELECTED FILE: " + dialog.GetPath())
 
     # Setting the controller view to be of RequestView and not just wx.Panel
     def set_view(self, view: RequestView):
@@ -104,6 +104,8 @@ class SelectLineView(wx.Panel):
         self.clear_button = wx.Button(self, label='Clear Selection')
         button_sizer.Add(self.clear_button, 0, wx.ALL | wx.LEFT, 20)
 
+        description = wx.StaticText(self, label="Selecting lines for inclusion or exclusion")
+        main_sizer.Add(description, 0, wx.LEFT, 10)
         main_sizer.Add(button_sizer, 0, wx.ALL | wx.CENTER)
 
         self.SetSizer(main_sizer)
@@ -479,11 +481,11 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
             self.view.flag_list_ctrl.Select(index, True)
             self.annotation.tuple_flags[self.selected_group][index] = False
 # The controlling class for the pages
-class AnnotationPagesViewController(object):
+class AnnotationNavigationController(object):
     def __init__(self, view_parent):
         super().__init__()
         # The controller has an associated view
-        self.view = AnnotationPagesView(view_parent)
+        self.view = AnnotationNavigationView(view_parent)
 
         # The array of pages and number of pages in it
         self.pages = []
@@ -536,14 +538,9 @@ class AnnotationPagesViewController(object):
         if self.page_num - 1 != -1:
             self.pages[self.page_num].view.Hide()
 
-            # Getting current pages annotation
-            #self.annotation = self.pages[self.page_num].annotation
             self.page_num -= 1
             self.pages[self.page_num].view.Show()
             self.view.panelSizer.Layout()
-
-            # Updating presented page with annotation
-            #self.pages[self.page_num].update_with_annotation(self.annotation)
 
             # Make sure to set the other button back to next instead of finish
             self.view.nextBtn.SetLabel("Next")
@@ -552,7 +549,7 @@ class AnnotationPagesViewController(object):
 
 
 # The view that holds the pages, includes navigation between pages
-class AnnotationPagesView(wx.Panel):
+class AnnotationNavigationView(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent=parent)
 
@@ -564,10 +561,10 @@ class AnnotationPagesView(wx.Panel):
         # add prev/next buttons
         self.prevBtn = wx.Button(self, label="Previous")
 
-        btn_sizer.Add(self.prevBtn, 0, wx.ALL, 5)
+        btn_sizer.Add(self.prevBtn, 0, wx.ALL, 10)
 
         self.nextBtn = wx.Button(self, label="Next")
-        btn_sizer.Add(self.nextBtn, 0, wx.ALL, 5)
+        btn_sizer.Add(self.nextBtn, 0, wx.ALL, 10)
 
         # finish layout
         self.mainSizer.Add(self.panelSizer, 1, wx.EXPAND)
@@ -582,24 +579,24 @@ class ApplicationViewController(object):
         self.view = AppFrame()
 
         # The controller of the panels of the application
-        self.panel_controller = AnnotationPagesViewController(self.view)
+        self.navigation_controller = AnnotationNavigationController(self.view)
 
         # Creating a request view controller
-        request_view_controller = RequestViewController(view_parent=self.panel_controller.view)
+        request_view_controller = RequestViewController(view_parent=self.navigation_controller.view)
 
         # Creating an annotation view controller (this will be changed to included/exclude class that
         # inherits from AnnotateViewController
-        select_line_view_controller = SelectLineViewController(view_parent=self.panel_controller.view)
+        select_line_view_controller = SelectLineViewController(view_parent=self.navigation_controller.view)
 
-        select_tuple_view_controller = SelectTupleViewController(view_parent=self.panel_controller.view)
+        select_tuple_view_controller = SelectTupleViewController(view_parent=self.navigation_controller.view)
 
-        select_flags_view_controller = SelectFlagsViewController(view_parent=self.panel_controller.view)
+        select_flags_view_controller = SelectFlagsViewController(view_parent=self.navigation_controller.view)
 
         # Adding the view controllers to the panel controller
-        self.panel_controller.addPage(request_view_controller)
-        self.panel_controller.addPage(select_line_view_controller)
-        self.panel_controller.addPage(select_tuple_view_controller)
-        self.panel_controller.addPage(select_flags_view_controller)
+        self.navigation_controller.addPage(request_view_controller)
+        self.navigation_controller.addPage(select_line_view_controller)
+        self.navigation_controller.addPage(select_tuple_view_controller)
+        self.navigation_controller.addPage(select_flags_view_controller)
 
         self.view.Layout()
 
@@ -610,7 +607,7 @@ class ApplicationViewController(object):
 class AppFrame(wx.Frame):
 
     def __init__(self):
-        wx.Frame.__init__(self, None, title='Annotation', size=(800, 600))
+        wx.Frame.__init__(self, None, title='Creating Annotation', size=(800, 600))
 
 
 # Initial start up of the application view controller
