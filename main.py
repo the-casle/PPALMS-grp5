@@ -26,6 +26,9 @@ class AnnotateViewControllerAbstract(object):
     def update_with_annotation(self, annotation: Annotation):
         pass
 
+    def reset(self):
+        pass
+
     view = property(get_view, set_view)
 
 
@@ -81,6 +84,10 @@ class RequestViewController(AnnotateViewControllerAbstract):
 
     view = property(get_view, set_view)
 
+    def reset(self):
+        self.annotation = Annotation()
+        self.view.file_selection.SetLabel("NO FILE SELECTED")
+
 
 class SelectLineView(wx.Panel):
     def __init__(self, parent):
@@ -134,6 +141,10 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
 
     view = property(get_view, set_view)
 
+    def reset(self):
+        self.annotation = None
+        self.view.list_ctrl.DeleteAllItems()
+
     def update_with_annotation(self, annotation: Annotation):
         self.annotation = annotation
         self.load_content(self.annotation.source_code_path)
@@ -171,6 +182,7 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
 
     def load_content(self, path):
         self.include_mode = False
+        self.view.include_mode_button.SetLabel("Switch to Inclusion")
         if os.path.exists(path):
             with open(path) as fobj:
                 self.view.list_ctrl.DeleteAllItems()
@@ -217,7 +229,8 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
 class SelectTupleView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
-        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        code_sizer = wx.BoxSizer(wx.HORIZONTAL)
         group_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # The table list
@@ -227,19 +240,23 @@ class SelectTupleView(wx.Panel):
         )
         self.list_ctrl.InsertColumn(0, ' ', format=wx.LIST_FORMAT_RIGHT, width=wx.LIST_AUTOSIZE)
         self.list_ctrl.InsertColumn(1, 'Lines', format=wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE)
-        main_sizer.Add(self.list_ctrl, 1, wx.LEFT | wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
+        code_sizer.Add(self.list_ctrl, 1, wx.ALL | wx.BOTTOM | wx.EXPAND, 5)
 
         self.group_list_ctrl = wx.ListCtrl(
             self,
-            style= wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_SINGLE_SEL
+            style=wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_SINGLE_SEL
         )
         self.group_list_ctrl.InsertColumn(0, 'Groups', format=wx.LIST_FORMAT_CENTER, width=wx.LIST_AUTOSIZE)
-        group_sizer.Add(self.group_list_ctrl, 0, wx.ALL | wx.EXPAND, 5)
+        group_sizer.Add(self.group_list_ctrl, 0, wx.EXPAND, 5)
 
         self.add_group_button = wx.Button(self, label='Add Group')
-        group_sizer.Add(self.add_group_button, 0, wx.ALL , 5)
+        group_sizer.Add(self.add_group_button, 0, wx.ALL, 5)
 
-        main_sizer.Add(group_sizer, 0, wx.ALL | wx.EXPAND, 20)
+        description = wx.StaticText(self, label="Selecting tuple groups")
+        code_sizer.Add(group_sizer, 0, wx.ALL | wx.EXPAND, 20)
+        main_sizer.Add(code_sizer, 0, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(description, 0, wx.ALL | wx.EXPAND, 10)
+
 
         self.SetSizer(main_sizer)
 
@@ -272,6 +289,11 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
         return self._view
 
     view = property(get_view, set_view)
+
+    def reset(self):
+        self.annotation = None
+        self.view.group_list_ctrl.DeleteAllItems()
+        self.view.list_ctrl.DeleteAllItems()
 
     def update_with_annotation(self, annotation: Annotation):
         self.annotation = annotation
@@ -315,7 +337,8 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
     # Handling add group button press
     def on_add_group(self, event):
         self.annotation.number_of_groups += 1
-        self.view.group_list_ctrl.InsertItem(self.annotation.number_of_groups - 1, "Group %i" % self.annotation.number_of_groups)
+        self.view.group_list_ctrl.InsertItem(self.annotation.number_of_groups - 1,
+                                             "Group %i" % self.annotation.number_of_groups)
         self.new_color()
         self.group_color.append(self.current_color)
         self.view.group_list_ctrl.SetItemTextColour(self.annotation.number_of_groups - 1, self.current_color)
@@ -340,6 +363,7 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
         item_ind = event.GetIndex()
         self.selected_group = item_ind
 
+
 class SelectFlagsView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -354,11 +378,11 @@ class SelectFlagsView(wx.Panel):
         )
         self.list_ctrl.InsertColumn(0, ' ', format=wx.LIST_FORMAT_RIGHT, width=wx.LIST_AUTOSIZE)
         self.list_ctrl.InsertColumn(1, 'Lines', format=wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE)
-        code_sizer.Add(self.list_ctrl, 1, wx.LEFT | wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
+        code_sizer.Add(self.list_ctrl, 1, wx.ALL | wx.BOTTOM | wx.EXPAND, 5)
 
         self.group_list_ctrl = wx.ListCtrl(
             self,
-            style= wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_SINGLE_SEL
+            style=wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_SINGLE_SEL
         )
         self.group_list_ctrl.InsertColumn(0, 'Groups', format=wx.LIST_FORMAT_CENTER, width=wx.LIST_AUTOSIZE)
         group_sizer.Add(self.group_list_ctrl, 0, wx.ALL | wx.EXPAND, 5)
@@ -411,6 +435,15 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
 
     view = property(get_view, set_view)
 
+    def reset(self):
+        self.annotation = None
+        self.view.flag_detail.SetLabel("Select a flag to view more details")
+        self.selected_group = None
+        self.view.group_list_ctrl.DeleteAllItems()
+        self.view.list_ctrl.DeleteAllItems()
+        for index in range(self.number_of_flags):
+            self.view.flag_list_ctrl.CheckItem(index, False)
+
     def update_with_annotation(self, annotation: Annotation):
         self.annotation = annotation
         self.load_content(self.annotation.source_code_path)
@@ -461,7 +494,8 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
         if index == 0:
             self.view.flag_detail.SetLabel("The lines of code must remain in the same relative order in the solution")
         elif index == 1:
-            self.view.flag_detail.SetLabel("The lines of code must remain the same distance from each other (measured in number of lines)")
+            self.view.flag_detail.SetLabel(
+                "The lines of code must remain the same distance from each other (measured in number of lines)")
         else:
             self.view.flag_detail.SetLabel("The lines of code must have the same index in the solution")
 
@@ -480,6 +514,8 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
             index = event.GetIndex()
             self.view.flag_list_ctrl.Select(index, True)
             self.annotation.tuple_flags[self.selected_group][index] = False
+
+
 # The controlling class for the pages
 class AnnotationNavigationController(object):
     def __init__(self, view_parent):
@@ -495,8 +531,9 @@ class AnnotationNavigationController(object):
         self.annotation = Annotation()
 
         # binding the button presses to methods
-        self.view.prevBtn.Bind(wx.EVT_BUTTON, self.onPrev)
-        self.view.nextBtn.Bind(wx.EVT_BUTTON, self.onNext)
+        self.view.prev_btn.Bind(wx.EVT_BUTTON, self.on_prev)
+        self.view.next_btn.Bind(wx.EVT_BUTTON, self.on_next)
+        self.view.restart_btn.Bind(wx.EVT_BUTTON, self.on_restart)
 
     def addPage(self, title_controller: AnnotateViewControllerAbstract):
 
@@ -510,7 +547,7 @@ class AnnotationNavigationController(object):
             title_controller.view.Hide()
             self.view.Layout()
 
-    def onNext(self, event):
+    def on_next(self, event):
         pageCount = len(self.pages)
         if pageCount - 1 != self.page_num:
             self.pages[self.page_num].view.Hide()
@@ -525,15 +562,15 @@ class AnnotationNavigationController(object):
         else:
             print("End of pages!")
 
-        if self.view.nextBtn.GetLabel() == "Finish":
+        if self.view.next_btn.GetLabel() == "Finish":
             # close the app
             self.view.GetParent().Close()
 
         if pageCount == self.page_num + 1:
             # change label
-            self.view.nextBtn.SetLabel("Finish")
+            self.view.next_btn.SetLabel("Finish")
 
-    def onPrev(self, event):
+    def on_prev(self, event):
         pageCount = len(self.pages)
         if self.page_num - 1 != -1:
             self.pages[self.page_num].view.Hide()
@@ -543,9 +580,19 @@ class AnnotationNavigationController(object):
             self.view.panelSizer.Layout()
 
             # Make sure to set the other button back to next instead of finish
-            self.view.nextBtn.SetLabel("Next")
+            self.view.next_btn.SetLabel("Next")
         else:
             print("You're already on the first page!")
+
+    def on_restart(self, event):
+        for controller in self.pages:
+            self.annotation = None
+            controller.reset()
+            controller.view.Hide()
+            self.pages[0].view.Show()
+            self.page_num = 0
+            self.view.next_btn.SetLabel("Next")
+            self.view.panelSizer.Layout()
 
 
 # The view that holds the pages, includes navigation between pages
@@ -558,13 +605,19 @@ class AnnotationNavigationView(wx.Panel):
         self.panelSizer = wx.BoxSizer(wx.VERTICAL)
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        # add prev/next buttons
-        self.prevBtn = wx.Button(self, label="Previous")
+        # add restart/prev/next buttons
+        self.restart_btn = wx.Button(self, label="Restart")
+        btn_sizer.Add(self.restart_btn, 0, wx.ALL, 10)
 
-        btn_sizer.Add(self.prevBtn, 0, wx.ALL, 10)
 
-        self.nextBtn = wx.Button(self, label="Next")
-        btn_sizer.Add(self.nextBtn, 0, wx.ALL, 10)
+        self.prev_btn = wx.Button(self, label="Previous")
+
+        btn_sizer.Add(self.prev_btn, 0, wx.ALL, 10)
+
+        self.next_btn = wx.Button(self, label="Next")
+        btn_sizer.Add(self.next_btn, 0, wx.ALL, 10)
+
+
 
         # finish layout
         self.mainSizer.Add(self.panelSizer, 1, wx.EXPAND)
@@ -607,7 +660,7 @@ class ApplicationViewController(object):
 class AppFrame(wx.Frame):
 
     def __init__(self):
-        wx.Frame.__init__(self, None, title='Creating Annotation', size=(800, 600))
+        wx.Frame.__init__(self, None, title='Creating Annotation', size=(900, 600))
 
 
 # Initial start up of the application view controller
