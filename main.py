@@ -660,7 +660,7 @@ class ApplicationViewController(object):
 class AppFrame(wx.Frame):
 
     def __init__(self):
-        wx.Frame.__init__(self, None, title='Creating Annotation', size=(900, 600))
+        wx.Frame.__init__(self, None, title='Creating Annotation', size=(900, 400))
 
 
 # Initial start up of the application view controller
