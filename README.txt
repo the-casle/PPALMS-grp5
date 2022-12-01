@@ -1,8 +1,10 @@
 -- PPALMS version 0.1 --
+-- CSCI 5801 --
 Jake Kaslewicz, Harrison Rowe, Muja Jama, Tyler Rife
 
 HOW TO USE
-1. ??
+1. To run, use the terminal to navigate to the program folder.
+   Then, enter "python3 main.py". The program should start.
 2. Select a desired file for annotation and question generation by clicking
    the "Select Source File" button.
 3. Click "Open" in the file explorer after highlighting your desired file.
