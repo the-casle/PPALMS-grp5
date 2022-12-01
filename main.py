@@ -168,6 +168,7 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
                     self.view.list_ctrl.SetItemTextColour(item_ind, wx.Colour(255, 0, 0))
 
     def load_content(self, path):
+        self.include_mode = False
         if os.path.exists(path):
             with open(path) as fobj:
                 self.view.list_ctrl.DeleteAllItems()
@@ -276,7 +277,6 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
         self.load_content(self.annotation.source_code_path)
 
     def load_content(self, path):
-
         if os.path.exists(path):
             with open(path) as fobj:
                 self.view.list_ctrl.DeleteAllItems()
@@ -317,6 +317,7 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
         self.new_color()
         self.group_color.append(self.current_color)
         self.view.group_list_ctrl.SetItemTextColour(self.annotation.number_of_groups - 1, self.current_color)
+        self.view.group_list_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
 
         if self.selected_group is None:
             self.selected_group = 0
@@ -340,7 +341,8 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
 class SelectFlagsView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
-        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        code_sizer = wx.BoxSizer(wx.HORIZONTAL)
         group_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # The table list
@@ -350,7 +352,7 @@ class SelectFlagsView(wx.Panel):
         )
         self.list_ctrl.InsertColumn(0, ' ', format=wx.LIST_FORMAT_RIGHT, width=wx.LIST_AUTOSIZE)
         self.list_ctrl.InsertColumn(1, 'Lines', format=wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE)
-        main_sizer.Add(self.list_ctrl, 1, wx.LEFT | wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
+        code_sizer.Add(self.list_ctrl, 1, wx.LEFT | wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
 
         self.group_list_ctrl = wx.ListCtrl(
             self,
@@ -363,10 +365,19 @@ class SelectFlagsView(wx.Panel):
             self,
             style=wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_SINGLE_SEL
         )
-        self.flag_list_ctrl.InsertColumn(0, 'Flags', format=wx.LIST_FORMAT_CENTER, width=wx.LIST_AUTOSIZE)
+        self.flag_list_ctrl.EnableCheckBoxes()
+        self.flag_list_ctrl.InsertColumn(0, 'Flags', format=wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE)
+        self.flag_list_ctrl.InsertItem(0, "Order")
+        self.flag_list_ctrl.InsertItem(1, "Distance")
+        self.flag_list_ctrl.InsertItem(2, "Line")
+        self.flag_list_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         group_sizer.Add(self.flag_list_ctrl, 0, wx.ALL | wx.EXPAND, 5)
+        code_sizer.Add(group_sizer, 0, wx.ALL | wx.EXPAND, 10)
 
-        main_sizer.Add(group_sizer, 0, wx.ALL | wx.EXPAND, 20)
+        main_sizer.Add(code_sizer, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.flag_detail = wx.StaticText(self, label="Select a flag to view more details")
+        main_sizer.Add(self.flag_detail, 0, wx.ALL | wx.EXPAND, 20)
 
         self.SetSizer(main_sizer)
 
@@ -377,20 +388,20 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
         self.annotation = None
         self.view = SelectFlagsView(view_parent)
 
-        self.line_at_index = []
+        self.number_of_flags = 3
 
-        self.current_color = wx.Colour("blue")
-
-        self.group_color = []
         self.selected_group = None
 
         # Binding the buttons of the view with the handlers in controller
         self.view.group_list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.group_item_selected)
+        self.view.flag_list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.flag_item_selected)
+        self.view.flag_list_ctrl.Bind(wx.EVT_LIST_ITEM_CHECKED, self.flag_item_checked)
+        self.view.flag_list_ctrl.Bind(wx.EVT_LIST_ITEM_UNCHECKED, self.flag_item_unchecked)
 
         self.view.Show()
 
     # Setting the self.view to be of AnnotateView type instead of just wx.panel
-    def set_view(self, view: SelectTupleView):
+    def set_view(self, view: SelectFlagsView):
         self._view = view
 
     def get_view(self):
@@ -406,29 +417,16 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
         self.view.group_list_ctrl.DeleteAllItems()
         for i in range(1, self.annotation.number_of_groups + 1):
             self.view.group_list_ctrl.InsertItem(i, "Group %i" % i)
-    def new_color(self):
-        r = self.current_color.GetRed()
-        b = self.current_color.GetBlue()
-        g = self.current_color.GetGreen()
-        r = (r + 213) % 255
-        g = (g + 113) % 255
-        b = (b + 53) % 255
-        self.current_color = wx.Colour(r, g, b)
+
+            self.annotation.tuple_flags.append([False] * self.number_of_flags)
 
     # Handling add group button press
-    def on_add_group(self, event):
-        self.annotation.number_of_groups += 1
-        self.view.group_list_ctrl.InsertItem(self.annotation.number_of_groups - 1, "Group %i" % self.annotation.number_of_groups)
-        self.new_color()
-        self.group_color.append(self.current_color)
-        self.view.group_list_ctrl.SetItemTextColour(self.annotation.number_of_groups - 1, self.current_color)
-
-        if self.selected_group is None:
-            self.selected_group = 0
 
     def group_item_selected(self, event):
         item_ind = event.GetIndex()
         self.selected_group = item_ind
+        for index in range(self.number_of_flags):
+            self.view.flag_list_ctrl.CheckItem(index, self.annotation.tuple_flags[self.selected_group][index])
 
         path = self.annotation.source_code_path
         if os.path.exists(path):
@@ -455,7 +453,31 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
         self.view.list_ctrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.view.list_ctrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
 
+    def flag_item_selected(self, event):
+        index = event.GetIndex()
+        self.view.flag_list_ctrl.Select(index, True)
+        if index == 0:
+            self.view.flag_detail.SetLabel("The lines of code must remain in the same relative order in the solution")
+        elif index == 1:
+            self.view.flag_detail.SetLabel("The lines of code must remain the same distance from each other (measured in number of lines)")
+        else:
+            self.view.flag_detail.SetLabel("The lines of code must have the same index in the solution")
 
+    def flag_item_checked(self, event):
+        if self.selected_group is None:
+            print("select a groups")
+        else:
+            index = event.GetIndex()
+            self.view.flag_list_ctrl.Select(index, True)
+            self.annotation.tuple_flags[self.selected_group][index] = True
+
+    def flag_item_unchecked(self, event):
+        if self.selected_group is None:
+            print("select a groups")
+        else:
+            index = event.GetIndex()
+            self.view.flag_list_ctrl.Select(index, True)
+            self.annotation.tuple_flags[self.selected_group][index] = False
 # The controlling class for the pages
 class AnnotationPagesViewController(object):
     def __init__(self, view_parent):
@@ -515,13 +537,13 @@ class AnnotationPagesViewController(object):
             self.pages[self.page_num].view.Hide()
 
             # Getting current pages annotation
-            self.annotation = self.pages[self.page_num].annotation
+            #self.annotation = self.pages[self.page_num].annotation
             self.page_num -= 1
             self.pages[self.page_num].view.Show()
             self.view.panelSizer.Layout()
 
             # Updating presented page with annotation
-            self.pages[self.page_num].update_with_annotation(self.annotation)
+            #self.pages[self.page_num].update_with_annotation(self.annotation)
 
             # Make sure to set the other button back to next instead of finish
             self.view.nextBtn.SetLabel("Next")
