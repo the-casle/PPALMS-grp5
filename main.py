@@ -17,6 +17,9 @@ class Annotation(object):
 
 # Abstract class so that the page controller knows that each view_controller has a view
 class AnnotateViewControllerAbstract(object):
+    def __init__(self):
+        self.view = None
+
     def set_view(self, view: wx.Panel):
         self._view = view
 
@@ -189,7 +192,7 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
                 i = 0
                 lines = [s.strip() for s in fobj.readlines()]
                 for line in lines:
-                    if (line != ""):
+                    if line != "":
                         # Adding indexes to first column
                         self.view.list_ctrl.InsertItem(i, "%i " % i)
 
@@ -257,7 +260,6 @@ class SelectTupleView(wx.Panel):
         main_sizer.Add(code_sizer, 0, wx.ALL | wx.EXPAND, 5)
         main_sizer.Add(description, 0, wx.ALL | wx.EXPAND, 10)
 
-
         self.SetSizer(main_sizer)
 
 
@@ -269,7 +271,7 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
 
         self.line_at_index = []
 
-        self.current_color = wx.Colour("blue")
+        self.current_color = wx.Colour("green")
 
         self.group_color = []
         self.selected_group = None
@@ -310,7 +312,7 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
                 self.line_at_index = []
                 lines = [s.strip() for s in fobj.readlines()]
                 for line in lines:
-                    if (line != ""):
+                    if line != "":
                         if self.annotation.included_lines[i]:
                             # Adding indexes to first column
                             self.view.list_ctrl.InsertItem(j, "%i " % i)
@@ -350,13 +352,11 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
     def item_selected(self, event):
         item_ind = event.GetIndex()
         line_num = self.line_at_index[item_ind]
-        print(line_num)
         self.view.list_ctrl.Select(item_ind, False)  # Hide the blue highlight for selection
         if self.annotation.number_of_groups > 0:
             self.view.list_ctrl.SetItemTextColour(item_ind, self.group_color[self.selected_group])
             self.annotation.line_tuple_groups[line_num] = self.selected_group
         else:
-            # make this a pop-up
             print("Need to add group")
 
     def group_item_selected(self, event):
@@ -415,6 +415,7 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
         self.view = SelectFlagsView(view_parent)
 
         self.number_of_flags = 3
+        self.line_at_index = []
 
         self.selected_group = None
 
@@ -473,7 +474,7 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
                 self.line_at_index = []
                 lines = [s.strip() for s in fobj.readlines()]
                 for line in lines:
-                    if (line != ""):
+                    if line != "":
                         if self.annotation.line_tuple_groups[i] == self.selected_group:
                             # Adding indexes to first column
                             self.view.list_ctrl.InsertItem(j, "%i " % i)
@@ -535,7 +536,7 @@ class AnnotationNavigationController(object):
         self.view.next_btn.Bind(wx.EVT_BUTTON, self.on_next)
         self.view.restart_btn.Bind(wx.EVT_BUTTON, self.on_restart)
 
-    def addPage(self, title_controller: AnnotateViewControllerAbstract):
+    def add_page(self, title_controller: AnnotateViewControllerAbstract):
 
         # Adding the page controller view to the panel view
         self.view.panelSizer.Add(title_controller.view, 2, wx.EXPAND)
@@ -548,8 +549,8 @@ class AnnotationNavigationController(object):
             self.view.Layout()
 
     def on_next(self, event):
-        pageCount = len(self.pages)
-        if pageCount - 1 != self.page_num:
+        page_count = len(self.pages)
+        if page_count - 1 != self.page_num:
             self.pages[self.page_num].view.Hide()
             self.annotation = self.pages[self.page_num].annotation
             self.page_num += 1
@@ -563,15 +564,17 @@ class AnnotationNavigationController(object):
             print("End of pages!")
 
         if self.view.next_btn.GetLabel() == "Finish":
+            # Getting the final annotation object to be used for problem generation
+            self.annotation = self.pages[self.page_num].annotation
+
             # close the app
             self.view.GetParent().Close()
 
-        if pageCount == self.page_num + 1:
+        if page_count == self.page_num + 1:
             # change label
             self.view.next_btn.SetLabel("Finish")
 
     def on_prev(self, event):
-        pageCount = len(self.pages)
         if self.page_num - 1 != -1:
             self.pages[self.page_num].view.Hide()
 
@@ -609,15 +612,12 @@ class AnnotationNavigationView(wx.Panel):
         self.restart_btn = wx.Button(self, label="Restart")
         btn_sizer.Add(self.restart_btn, 0, wx.ALL, 10)
 
-
         self.prev_btn = wx.Button(self, label="Previous")
 
         btn_sizer.Add(self.prev_btn, 0, wx.ALL, 10)
 
         self.next_btn = wx.Button(self, label="Next")
         btn_sizer.Add(self.next_btn, 0, wx.ALL, 10)
-
-
 
         # finish layout
         self.mainSizer.Add(self.panelSizer, 1, wx.EXPAND)
@@ -646,10 +646,10 @@ class ApplicationViewController(object):
         select_flags_view_controller = SelectFlagsViewController(view_parent=self.navigation_controller.view)
 
         # Adding the view controllers to the panel controller
-        self.navigation_controller.addPage(request_view_controller)
-        self.navigation_controller.addPage(select_line_view_controller)
-        self.navigation_controller.addPage(select_tuple_view_controller)
-        self.navigation_controller.addPage(select_flags_view_controller)
+        self.navigation_controller.add_page(request_view_controller)
+        self.navigation_controller.add_page(select_line_view_controller)
+        self.navigation_controller.add_page(select_tuple_view_controller)
+        self.navigation_controller.add_page(select_flags_view_controller)
 
         self.view.Layout()
 
