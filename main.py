@@ -1,7 +1,7 @@
 import os
 import wx
 
-
+# Basic annotation class, used in other classes
 class Annotation(object):
     def __init__(self):
         super().__init__()
@@ -34,7 +34,7 @@ class AnnotateViewControllerAbstract(object):
 
     view = property(get_view, set_view)
 
-
+# Start up / File selection page
 class RequestView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -48,6 +48,7 @@ class RequestView(wx.Panel):
         self.edit_button = wx.Button(self, label='Select Source File')
         button_sizer.Add(self.edit_button, 0, wx.ALL | wx.LEFT, 20)
 
+        # Shows selected file
         self.file_selection = wx.StaticText(self, label="NO FILE SELECTED")
         text_sizer.Add(self.file_selection, 0, wx.ALL | wx.RIGHT, 20)
 
@@ -56,7 +57,7 @@ class RequestView(wx.Panel):
 
         self.SetSizer(main_sizer)
 
-
+# File selection page controller
 class RequestViewController(AnnotateViewControllerAbstract):
     def __init__(self, view_parent):
         super().__init__()
@@ -67,7 +68,9 @@ class RequestViewController(AnnotateViewControllerAbstract):
         # shouldn't be None
         self.annotation = Annotation()
 
+    # Select source file
     def on_edit(self, event):
+        # open file explorer, save selected file
         dialog = wx.FileDialog(self.view, "Open Source File",
                                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
 
@@ -76,6 +79,8 @@ class RequestViewController(AnnotateViewControllerAbstract):
 
         # Set the annotation path to the use selected path
         self.annotation.source_code_path = dialog.GetPath()
+
+        # display selected file
         self.view.file_selection.SetLabel("SELECTED FILE: " + dialog.GetPath())
 
     # Setting the controller view to be of RequestView and not just wx.Panel
@@ -91,7 +96,7 @@ class RequestViewController(AnnotateViewControllerAbstract):
         self.annotation = Annotation()
         self.view.file_selection.SetLabel("NO FILE SELECTED")
 
-
+# annotation page
 class SelectLineView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -120,7 +125,7 @@ class SelectLineView(wx.Panel):
 
         self.SetSizer(main_sizer)
 
-
+# annotation page controller
 class SelectLineViewController(AnnotateViewControllerAbstract):
     def __init__(self, view_parent):
         super().__init__()
@@ -190,6 +195,7 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
             with open(path) as fobj:
                 self.view.list_ctrl.DeleteAllItems()
                 i = 0
+                # removes new line characters from each line
                 lines = [s.strip() for s in fobj.readlines()]
                 for line in lines:
                     if line != "":
@@ -228,7 +234,7 @@ class SelectLineViewController(AnnotateViewControllerAbstract):
         self.view.list_ctrl.Select(item_ind, False)  # Hide the blue highlight for selection
         self.swap_color(item_ind)
 
-
+# tuple page
 class SelectTupleView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -262,7 +268,7 @@ class SelectTupleView(wx.Panel):
 
         self.SetSizer(main_sizer)
 
-
+# tuple controller
 class SelectTupleViewController(AnnotateViewControllerAbstract):
     def __init__(self, view_parent):
         super().__init__()
@@ -363,7 +369,7 @@ class SelectTupleViewController(AnnotateViewControllerAbstract):
         item_ind = event.GetIndex()
         self.selected_group = item_ind
 
-
+# flag selection
 class SelectFlagsView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -407,7 +413,7 @@ class SelectFlagsView(wx.Panel):
 
         self.SetSizer(main_sizer)
 
-
+# flags controller
 class SelectFlagsViewController(AnnotateViewControllerAbstract):
     def __init__(self, view_parent):
         super().__init__()
