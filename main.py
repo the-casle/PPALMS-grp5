@@ -42,8 +42,6 @@ class RequestView(wx.Panel):
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         text_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.annotation = Annotation()
-
         # Adding buttons the request view
         self.edit_button = wx.Button(self, label='Select Source File')
         button_sizer.Add(self.edit_button, 0, wx.ALL | wx.LEFT, 20)
@@ -523,6 +521,33 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
             self.annotation.tuple_flags[self.selected_group][index] = False
 
 
+# The view that holds the pages, includes navigation between pages
+class AnnotationNavigationView(wx.Panel):
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent=parent)
+
+        # Creating the sizers
+        self.mainSizer = wx.BoxSizer(wx.VERTICAL)
+        self.panelSizer = wx.BoxSizer(wx.VERTICAL)
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # add restart/prev/next buttons
+        self.restart_btn = wx.Button(self, label="Restart")
+        btn_sizer.Add(self.restart_btn, 0, wx.ALL, 10)
+
+        self.prev_btn = wx.Button(self, label="Previous")
+
+        btn_sizer.Add(self.prev_btn, 0, wx.ALL, 10)
+
+        self.next_btn = wx.Button(self, label="Next")
+        btn_sizer.Add(self.next_btn, 0, wx.ALL, 10)
+
+        # finish layout
+        self.mainSizer.Add(self.panelSizer, 1, wx.EXPAND)
+        self.mainSizer.Add(btn_sizer, 0, wx.ALIGN_RIGHT)
+        self.SetSizer(self.mainSizer)
+
+
 # The controlling class for the pages
 class AnnotationNavigationController(object):
     def __init__(self, view_parent):
@@ -604,58 +629,106 @@ class AnnotationNavigationController(object):
             self.view.panelSizer.Layout()
 
 
-# The view that holds the pages, includes navigation between pages
-class AnnotationNavigationView(wx.Panel):
+class ProblemSetView(wx.Panel):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent=parent)
+        super().__init__(parent)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        text_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        # Creating the sizers
-        self.mainSizer = wx.BoxSizer(wx.VERTICAL)
-        self.panelSizer = wx.BoxSizer(wx.VERTICAL)
-        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        source_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # add restart/prev/next buttons
-        self.restart_btn = wx.Button(self, label="Restart")
-        btn_sizer.Add(self.restart_btn, 0, wx.ALL, 10)
+        select_file_text = wx.StaticText(self, label="NO FILE SELECTED")
+        source_sizer.Add(select_file_text, 0, wx.ALL | wx.RIGHT, 0)
+        select_source_button = wx.Button(self, label='Code')
+        source_sizer.Add(select_source_button , 0, wx.ALL | wx.RIGHT)
 
-        self.prev_btn = wx.Button(self, label="Previous")
+        languages = ['C', 'C++', 'Python', 'Java', 'Perl']
+        choice = wx.Choice(self, choices=languages)
+        source_sizer.Add(choice, 0, wx.ALL | wx.LEFT, 20)
 
-        btn_sizer.Add(self.prev_btn, 0, wx.ALL, 10)
+        selectsourcebuttons = [select_source_button]
+        select_file_texts = [select_file_text]
 
-        self.next_btn = wx.Button(self, label="Next")
-        btn_sizer.Add(self.next_btn, 0, wx.ALL, 10)
 
-        # finish layout
-        self.mainSizer.Add(self.panelSizer, 1, wx.EXPAND)
-        self.mainSizer.Add(btn_sizer, 0, wx.ALIGN_RIGHT)
-        self.SetSizer(self.mainSizer)
+
+        # Adding buttons the request view
+        self.edit_button = wx.Button(self, label='yee-')
+        button_sizer.Add(self.edit_button, 0, wx.ALL | wx.LEFT, 20)
+
+        # Shows selected file
+        self.file_selection = wx.StaticText(self, label="boop")
+        text_sizer.Add(self.file_selection, 0, wx.ALL | wx.RIGHT, 20)
+
+        main_sizer.Add(button_sizer, 0, wx.ALL | wx.LEFT)
+        main_sizer.Add(text_sizer, 0, wx.ALL | wx.RIGHT)
+        main_sizer.Add(source_sizer, 0, wx.ALL | wx.RIGHT)
+
+        self.SetSizer(main_sizer)
+
+# File selection page controller
+class ProblemSetViewController(object):
+    def __init__(self, view_parent):
+        super().__init__()
+        self.view = ProblemSetView(view_parent)
+        self.view.edit_button.Bind(wx.EVT_BUTTON, self.on_edit)
+
+        # Creating the initial Annotation maybe implement better so that more clear it
+        # shouldn't be None
+        self.annotation = Annotation()
+
+    # Select source file
+    def on_edit(self, event):
+        # open file explorer, save selected file
+        dialog = wx.FileDialog(self.view, "Open Source File",
+                               style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+
+        if dialog.ShowModal() == wx.ID_CANCEL:
+            return
+
+        # Set the annotation path to the use selected path
+        self.annotation.source_code_path = dialog.GetPath()
+
+        # display selected file
+        self.view.file_selection.SetLabel("SELECTED FILE: " + dialog.GetPath())
+
+    # Setting the controller view to be of RequestView and not just wx.Panel
+    def set_view(self, view: RequestView):
+        self._view = view
+
+    def get_view(self):
+        return self._view
+
+    view = property(get_view, set_view)
 
 
 # The view controller for the main application.
-class ApplicationViewController(object):
+class ApplicationViewController(wx.App):
     def __init__(self):
         super().__init__()
         self.view = AppFrame()
 
         # The controller of the panels of the application
-        self.navigation_controller = AnnotationNavigationController(self.view)
+        #self.navigation_controller = AnnotationNavigationController(self.view)
 
         # Creating a request view controller
-        request_view_controller = RequestViewController(view_parent=self.navigation_controller.view)
+        #request_view_controller = RequestViewController(view_parent=self.navigation_controller.view)
 
         # Creating an annotation view controller (this will be changed to included/exclude class that
         # inherits from AnnotateViewController
-        select_line_view_controller = SelectLineViewController(view_parent=self.navigation_controller.view)
+        #select_line_view_controller = SelectLineViewController(view_parent=self.navigation_controller.view)
 
-        select_tuple_view_controller = SelectTupleViewController(view_parent=self.navigation_controller.view)
+        #select_tuple_view_controller = SelectTupleViewController(view_parent=self.navigation_controller.view)
 
-        select_flags_view_controller = SelectFlagsViewController(view_parent=self.navigation_controller.view)
+        #select_flags_view_controller = SelectFlagsViewController(view_parent=self.navigation_controller.view)
 
         # Adding the view controllers to the panel controller
-        self.navigation_controller.add_page(request_view_controller)
-        self.navigation_controller.add_page(select_line_view_controller)
-        self.navigation_controller.add_page(select_tuple_view_controller)
-        self.navigation_controller.add_page(select_flags_view_controller)
+        #self.navigation_controller.add_page(request_view_controller)
+        #self.navigation_controller.add_page(select_line_view_controller)
+        #self.navigation_controller.add_page(select_tuple_view_controller)
+        #self.navigation_controller.add_page(select_flags_view_controller)
+
+        problem_set_view_controller = ProblemSetViewController(view_parent=self.view)
 
         self.view.Layout()
 
@@ -666,11 +739,10 @@ class ApplicationViewController(object):
 class AppFrame(wx.Frame):
 
     def __init__(self):
-        wx.Frame.__init__(self, None, title='Creating Annotation', size=(900, 400))
+        wx.Frame.__init__(self, None, title='Creating Annotation', size=(900, 500))
 
 
 # Initial start up of the application view controller
 if __name__ == '__main__':
-    app = wx.App(False)
-    app_controller = ApplicationViewController()
+    app = ApplicationViewController()
     app.MainLoop()
