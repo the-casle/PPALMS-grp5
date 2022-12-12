@@ -660,6 +660,7 @@ class ProblemSetViewController(object):
         self.source_txts = []
         self.source_types = []
         self.source_sizers = []
+        self.advance_btns = []
         self.number_of_source_blocks = 0
         self.annotations = []
 
@@ -680,17 +681,22 @@ class ProblemSetViewController(object):
         choice = wx.Choice(self.view, choices=options)
         button_sizer.Add(choice, 0, wx.LEFT, 10)
 
+        advanced_button = wx.Button(self.view, label='Advanced')
+        button_sizer.Add(advanced_button, 0, wx.LEFT, 10)
+
         source_sizer.Add(button_sizer, 0, wx.TOP, 10)
-        self.view.source_info_sizer.Add(source_sizer, 0, wx.ALL | wx.RIGHT)
+        self.view.source_info_sizer.Add(source_sizer, 0, wx.TOP, 15)
         self.view.Layout()
 
         i = self.number_of_source_blocks
         select_source_button.Bind(wx.EVT_BUTTON, lambda event: self.select_source(event, i))
+        advanced_button.Bind(wx.EVT_BUTTON, lambda event: self.select_advance(event, i))
 
         self.source_btns.append(select_source_button)
         self.source_txts.append(select_file_text)
         self.source_types.append(choice)
         self.source_sizers.append(source_sizer)
+        self.advance_btns.append(advanced_button)
         self.annotations.append(Annotation())
         self.number_of_source_blocks += 1
 
@@ -705,12 +711,26 @@ class ProblemSetViewController(object):
             self.source_txts.pop().Destroy()
             self.source_btns.pop().Destroy()
             self.source_types.pop().Destroy()
+            self.advance_btns.pop().Destroy()
             self.annotations.pop()
 
             self.view.source_info_sizer.Remove(self.source_sizers.pop())
             self.view.source_info_sizer.Layout()
         else:
             print("Can't remove anymore")
+
+    def select_advance(self, event, index):
+        title = "Advanced Annotation"
+        top_view = wx.GetTopLevelParent(self.view)
+        navigation_controller = AnnotationNavigationController(wx.GetTopLevelParent(self.view))
+        self.view.Hide()
+
+        request_view_controller = RequestViewController(view_parent=navigation_controller.view)
+        navigation_controller.add_page(request_view_controller)
+
+        print(wx.GetTopLevelParent(self.view))
+        wx.GetTopLevelParent(self.view).Layout()
+        print("we advance")
 
     # Select source file
     def select_source(self, event, index):
