@@ -633,26 +633,10 @@ class ProblemSetView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        text_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
         self.source_info_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # Adding buttons the request view
-        self.edit_button = wx.Button(self, label='yee-')
-        button_sizer.Add(self.edit_button, 0, wx.ALL | wx.LEFT, 20)
-
-        # Shows selected file
-        self.file_selection = wx.StaticText(self, label="boop")
-        text_sizer.Add(self.file_selection, 0, wx.ALL | wx.RIGHT, 20)
-
-        main_sizer.Add(button_sizer, 0, wx.ALL | wx.LEFT)
-        main_sizer.Add(text_sizer, 0, wx.ALL | wx.RIGHT)
-
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
         self.del_btn = wx.Button(self, label="Delete")
-
         btn_sizer.Add(self.del_btn, 0, wx.ALL, 10)
 
         self.add_btn = wx.Button(self, label="Add")
@@ -668,7 +652,6 @@ class ProblemSetViewController(object):
     def __init__(self, view_parent):
         super().__init__()
         self.view = ProblemSetView(view_parent)
-        self.view.edit_button.Bind(wx.EVT_BUTTON, self.on_edit)
 
         self.view.add_btn.Bind(wx.EVT_BUTTON, self.add_source_event)
         self.view.del_btn.Bind(wx.EVT_BUTTON, self.del_source_event)
@@ -678,37 +661,39 @@ class ProblemSetViewController(object):
         self.source_types = []
         self.source_sizers = []
         self.number_of_source_blocks = 0
+        self.annotations = []
 
         self.add_new_source()
 
-        #self.view.Bind(wx.EVT_BUTTON, lambda event: self.OnClick(event, 'somevalue'), self.)
 
-        # Creating the initial Annotation maybe implement better so that more clear it
-        # shouldn't be None
-        self.annotation = Annotation()
 
     def add_new_source(self):
         source_sizer = wx.BoxSizer(wx.VERTICAL)
-        button2_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         select_file_text = wx.StaticText(self.view, label="NO FILE SELECTED")
         source_sizer.Add(select_file_text, 0, wx.LEFT, 10)
-        select_source_button = wx.Button(self.view, label='Code')
-        button2_sizer.Add(select_source_button, 0, wx.LEFT, 10)
+        select_source_button = wx.Button(self.view, label='Select Source code')
+        button_sizer.Add(select_source_button, 0, wx.LEFT, 10)
 
-        languages = ['C', 'C++', 'Python', 'Java', 'Perl']
-        choice = wx.Choice(self.view, choices=languages)
-        button2_sizer.Add(choice, 0, wx.LEFT, 10)
+        options = ['Reordering', 'Multiple Choice', 'Find the Bug']
+        choice = wx.Choice(self.view, choices=options)
+        button_sizer.Add(choice, 0, wx.LEFT, 10)
 
-        source_sizer.Add(button2_sizer, 0, wx.TOP, 10)
+        source_sizer.Add(button_sizer, 0, wx.TOP, 10)
         self.view.source_info_sizer.Add(source_sizer, 0, wx.ALL | wx.RIGHT)
         self.view.Layout()
+
+        i = self.number_of_source_blocks
+        select_source_button.Bind(wx.EVT_BUTTON, lambda event: self.select_source(event, i))
 
         self.source_btns.append(select_source_button)
         self.source_txts.append(select_file_text)
         self.source_types.append(choice)
         self.source_sizers.append(source_sizer)
+        self.annotations.append(Annotation())
         self.number_of_source_blocks += 1
+
 
     def add_source_event(self, event):
         self.add_new_source()
@@ -720,15 +705,15 @@ class ProblemSetViewController(object):
             self.source_txts.pop().Destroy()
             self.source_btns.pop().Destroy()
             self.source_types.pop().Destroy()
+            self.annotations.pop()
 
             self.view.source_info_sizer.Remove(self.source_sizers.pop())
             self.view.source_info_sizer.Layout()
         else:
             print("Can't remove anymore")
 
-
     # Select source file
-    def on_edit(self, event):
+    def select_source(self, event, index):
         # open file explorer, save selected file
         dialog = wx.FileDialog(self.view, "Open Source File",
                                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
@@ -737,10 +722,10 @@ class ProblemSetViewController(object):
             return
 
         # Set the annotation path to the use selected path
-        self.annotation.source_code_path = dialog.GetPath()
+        self.annotations[index].source_code_path = dialog.GetPath()
 
         # display selected file
-        self.view.file_selection.SetLabel("SELECTED FILE: " + dialog.GetPath())
+        self.source_txts[index].SetLabel("SELECTED FILE: " + dialog.GetPath())
 
     # Setting the controller view to be of RequestView and not just wx.Panel
     def set_view(self, view: ProblemSetView):
