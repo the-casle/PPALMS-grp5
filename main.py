@@ -532,7 +532,7 @@ class AnnotationNavigationView(wx.Frame):
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # add restart/prev/next buttons
-        self.restart_btn = wx.Button(self, label="Restart")
+        self.restart_btn = wx.Button(self, label="Exit")
         btn_sizer.Add(self.restart_btn, 0, wx.ALL, 10)
 
         self.prev_btn = wx.Button(self, label="Previous")
@@ -602,7 +602,7 @@ class AnnotationNavigationController(object):
             self.annotation = self.pages[self.page_num].annotation
 
             # close the app
-            self.view.GetParent().Close()
+            self.view.Close()
 
         if page_count == self.page_num + 1:
             # change label
@@ -630,6 +630,7 @@ class AnnotationNavigationController(object):
             self.page_num = 0
             self.view.next_btn.SetLabel("Next")
             self.view.panelSizer.Layout()
+            self.view.Close()
 
 
 class ProblemSetView(wx.Panel):
@@ -637,6 +638,17 @@ class ProblemSetView(wx.Panel):
         super().__init__(parent)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.source_info_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        student_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        select_file_text = wx.StaticText(self, label="Number of students:")
+        text_ctrl = wx.TextCtrl(self, size=(100, 25), style=wx.TE_PROCESS_ENTER)
+        sl = wx.StaticLine(self, 2, size=(250, 1), style=wx.LI_HORIZONTAL)
+
+        student_sizer.Add(select_file_text, 0, wx.TOP, 2)
+        student_sizer.Add(text_ctrl, 0, wx.LEFT, 5)
+        main_sizer.Add(student_sizer, 0, wx.TOP | wx.LEFT, 10)
+        main_sizer.Add(sl, 0, wx.EXPAND | wx.TOP, 10)
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.del_btn = wx.Button(self, label="Delete")
@@ -682,9 +694,11 @@ class ProblemSetViewController(object):
 
         options = ['Reordering', 'Multiple Choice', 'Find the Bug']
         choice = wx.Choice(self.view, choices=options)
+        choice.Disable()
         button_sizer.Add(choice, 0, wx.LEFT, 10)
 
         advanced_button = wx.Button(self.view, label='Advanced')
+        advanced_button.Disable()
         button_sizer.Add(advanced_button, 0, wx.LEFT, 10)
 
         source_sizer.Add(button_sizer, 0, wx.TOP, 10)
@@ -751,6 +765,9 @@ class ProblemSetViewController(object):
 
         # Set the annotation path to the use selected path
         self.annotations[index].source_code_path = dialog.GetPath()
+
+        self.advance_btns[index].Enable()
+        self.source_types[index].Enable()
 
         # display selected file
         self.source_txts[index].SetLabel("SELECTED FILE: " + dialog.GetPath())
