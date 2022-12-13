@@ -522,9 +522,9 @@ class SelectFlagsViewController(AnnotateViewControllerAbstract):
 
 
 # The view that holds the pages, includes navigation between pages
-class AnnotationNavigationView(wx.Panel):
+class AnnotationNavigationView(wx.Frame):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent=parent)
+        wx.Frame.__init__(self, parent, wx.ID_ANY, "Annotation", size=(900, 500))
 
         # Creating the sizers
         self.mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -554,6 +554,7 @@ class AnnotationNavigationController(object):
         super().__init__()
         # The controller has an associated view
         self.view = AnnotationNavigationView(view_parent)
+        self.view.Show()
 
         # The array of pages and number of pages in it
         self.pages = []
@@ -571,9 +572,11 @@ class AnnotationNavigationController(object):
 
         # Adding the page controller view to the panel view
         self.view.panelSizer.Add(title_controller.view, 2, wx.EXPAND)
+        title_controller.update_with_annotation(self.annotation)
 
         # Add the controller to the list of pages
         self.pages.append(title_controller)
+        self.view.Layout()
         if len(self.pages) > 1:
             # hide all panels after the first one
             title_controller.view.Hide()
@@ -700,7 +703,6 @@ class ProblemSetViewController(object):
         self.annotations.append(Annotation())
         self.number_of_source_blocks += 1
 
-
     def add_source_event(self, event):
         self.add_new_source()
 
@@ -723,14 +725,20 @@ class ProblemSetViewController(object):
         title = "Advanced Annotation"
         top_view = wx.GetTopLevelParent(self.view)
         navigation_controller = AnnotationNavigationController(wx.GetTopLevelParent(self.view))
-        self.view.Hide()
 
-        request_view_controller = RequestViewController(view_parent=navigation_controller.view)
-        navigation_controller.add_page(request_view_controller)
+        select_line_view_controller = SelectLineViewController(view_parent=navigation_controller.view)
 
-        print(wx.GetTopLevelParent(self.view))
+        select_tuple_view_controller = SelectTupleViewController(view_parent=navigation_controller.view)
+
+        select_flags_view_controller = SelectFlagsViewController(view_parent=navigation_controller.view)
+
+        navigation_controller.annotation = self.annotations[index]
+        # Adding the view controllers to the panel controller
+        navigation_controller.add_page(select_line_view_controller)
+        navigation_controller.add_page(select_tuple_view_controller)
+        navigation_controller.add_page(select_flags_view_controller)
+
         wx.GetTopLevelParent(self.view).Layout()
-        print("we advance")
 
     # Select source file
     def select_source(self, event, index):
@@ -794,8 +802,7 @@ class ApplicationViewController(wx.App):
 class AppFrame(wx.Frame):
 
     def __init__(self):
-        wx.Frame.__init__(self, None, title='Creating Annotation', size=(900, 500))
-
+        wx.Frame.__init__(self, None, title='Creating Annotation', size=(600, 700))
 
 # Initial start up of the application view controller
 if __name__ == '__main__':
