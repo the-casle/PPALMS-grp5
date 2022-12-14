@@ -563,7 +563,7 @@ class AnnotationNavigationController(object):
 
     def on_restart(self, event):
         for controller in self.pages:
-            self.annotation = None
+            controller.annotation = None
             controller.reset()
             controller.view.Hide()
             self.pages[0].view.Show()
@@ -572,7 +572,7 @@ class AnnotationNavigationController(object):
             self.view.panelSizer.Layout()
             self.view.Close()
 
-
+# The default view that shows up when starting the application
 class ProblemSetView(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -581,12 +581,14 @@ class ProblemSetView(wx.Panel):
 
         student_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
+        # Adding a text box to input the number of students in the class
         select_file_text = wx.StaticText(self, label="Number of students:")
-        text_ctrl = wx.TextCtrl(self, size=(100, 25), style=wx.TE_PROCESS_ENTER)
+        self.text_ctrl = wx.TextCtrl(self, size=(100, 25), style=wx.TE_PROCESS_ENTER)
+        self.text_ctrl.AppendText("10")
         sl = wx.StaticLine(self, 2, size=(250, 1), style=wx.LI_HORIZONTAL)
 
         student_sizer.Add(select_file_text, 0, wx.TOP, 2)
-        student_sizer.Add(text_ctrl, 0, wx.LEFT, 5)
+        student_sizer.Add(self.text_ctrl, 0, wx.LEFT, 5)
         main_sizer.Add(student_sizer, 0, wx.TOP | wx.LEFT, 10)
         main_sizer.Add(sl, 0, wx.EXPAND | wx.TOP, 10)
 
@@ -605,7 +607,7 @@ class ProblemSetView(wx.Panel):
 
         self.SetSizer(main_sizer)
 
-# File selection page controller
+# The landing page for problem set generation view controller
 class ProblemSetViewController(object):
     def __init__(self, view_parent):
         super().__init__()
@@ -625,8 +627,7 @@ class ProblemSetViewController(object):
 
         self.add_new_source()
 
-
-
+    # This method created a new source block to be added to the main landing page
     def add_new_source(self):
         source_sizer = wx.BoxSizer(wx.VERTICAL)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -649,6 +650,7 @@ class ProblemSetViewController(object):
         self.view.source_info_sizer.Add(source_sizer, 0, wx.TOP, 15)
         self.view.Layout()
 
+        # Binding each button to the same event handler, but passing the index of the button
         i = self.number_of_source_blocks
         select_source_button.Bind(wx.EVT_BUTTON, lambda event: self.select_source(event, i))
         advanced_button.Bind(wx.EVT_BUTTON, lambda event: self.select_advance(event, i))
@@ -665,6 +667,7 @@ class ProblemSetViewController(object):
         self.add_new_source()
 
     def del_source_event(self, event):
+        # Can't remove a source block when there's only one remaining
         if self.number_of_source_blocks > 1:
             self.number_of_source_blocks -= 1
             i = self.number_of_source_blocks
@@ -679,6 +682,7 @@ class ProblemSetViewController(object):
         else:
             print("Can't remove anymore")
 
+    # Event handler for when the advanced button is selected
     def select_advance(self, event, index):
         title = "Advanced Annotation"
         top_view = wx.GetTopLevelParent(self.view)
@@ -690,7 +694,12 @@ class ProblemSetViewController(object):
 
         select_flags_view_controller = SelectFlagsViewController(view_parent=navigation_controller.view)
 
+        # This resets the advanced selection each time. Future implementation is viewing old selections.
         navigation_controller.annotation = self.annotations[index]
+        source = navigation_controller.annotation.source_code_path
+        navigation_controller.annotation = Annotation()
+        navigation_controller.annotation.source_code_path = source
+
         # Adding the view controllers to the panel controller
         navigation_controller.add_page(select_line_view_controller)
         navigation_controller.add_page(select_tuple_view_controller)
@@ -698,7 +707,18 @@ class ProblemSetViewController(object):
 
         wx.GetTopLevelParent(self.view).Layout()
 
+    # The button used to generate the problem set. This functionality has not been added yet, however it
+    # Does check if input values are within expected range
     def gen_source_event(self, event):
+        for annotation in self.annotations:
+            if annotation.source_code_path == "":
+                print("Need to specify source")
+                return
+
+        if int(self.view.text_ctrl.GetLineText(0)) <= 0:
+            print("Invalid students")
+            return
+        print("Generating Problem Set...")
         exit(0)
 
     # Select source file
