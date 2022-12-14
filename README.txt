@@ -2,6 +2,9 @@
 -- CSCI 5801 --
 Jake Kaslewicz, Harrison Rowe, Muja Jama, Tyler Rife
 
+*WARNING: THERE MAY BE BUGS WHEN RUNNING ON THE VIRTUAL ONLINE LINUX ENVIRONMENT (VOLE)*
+*THIS IS UNLIKELY BUT BE COGNIZANT*
+
 HOW TO USE
 1. To run, use the terminal to navigate to the program folder.
    Then, enter "python3 main.py". The program should start.
