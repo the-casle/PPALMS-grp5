@@ -710,14 +710,13 @@ class ProblemSetViewController(object):
     # The button used to generate the problem set. This functionality has not been added yet, however it
     # Does check if input values are within expected range
     def gen_source_event(self, event):
+        if int(self.view.text_ctrl.GetLineText(0)) <= 0:
+            print("Invalid students")
+            return
         for annotation in self.annotations:
             if annotation.source_code_path == "":
                 print("Need to specify source")
                 return
-
-        if int(self.view.text_ctrl.GetLineText(0)) <= 0:
-            print("Invalid students")
-            return
         print("Generating Problem Set...")
         exit(0)
 
